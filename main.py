@@ -3,39 +3,53 @@ import tensorflow as tf
 import os
 from PIL import Image
 import numpy as np
-import  keras.utils as utils
+import keras.utils as utils
 from sklearn.preprocessing import LabelEncoder
 import matplotlib.pyplot as plt
 import io
-import pandas as  pd
+import pandas as pd
 import time
 import base64
+import bcrypt
+import sqlite3
 
-USER_DATA = {
-    "tes": "tes",
-    "alin": "alin"
-}
+def connect_db():
+    conn = sqlite3.connect('user_data.db', check_same_thread=False)
+    return conn
 
-if "login_status" not in st.session_state:
-    st.session_state["login_status"] = False
+def create_users_table(conn):
+    cursor = conn.cursor()
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            username TEXT PRIMARY KEY,
+            password TEXT
+        )
+    ''')
+    conn.commit()
 
-if "show_splash" not in st.session_state:
-    st.session_state["show_splash"] = True
+def login_user(conn, username, password):
+    cursor = conn.cursor()
+    cursor.execute('SELECT password FROM users WHERE username = ?', (username,))
+    result = cursor.fetchone()
+    if result:
+        hashed_password = result[0]
+        if bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8')):
+            return True
+    return False
 
-def login(username, password):
-    if USER_DATA.get(username) == password:
-        st.session_state["login_status"] = True
-        st.session_state["username"] = username
-        st.experimental_rerun()
-        return True
-    else:
-        st.session_state["login_status"] = False
-        st.experimental_rerun()
-        return False
+def register_user(conn, username, password):
+    cursor = conn.cursor()
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    try:
+        cursor.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, hashed_password))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        st.error("Username already exists. Please choose a different username.")
 
 def logout():
     st.session_state["login_status"] = False
     st.session_state.pop("username", None)
+    st.experimental_rerun()
 
 def splash_screen():
     st.markdown(
@@ -83,7 +97,6 @@ def splash_screen():
     st.session_state["show_splash"] = False
     st.experimental_rerun()
 
-
 def make_prediction(image_array):
     prediction = model.predict(image_array)
     predicted_class = le2.inverse_transform([np.argmax(prediction)])[0]
@@ -93,29 +106,52 @@ def load_image(uploaded_file):
     return io.BytesIO(uploaded_file.read())
 
 def main():
+    conn = connect_db()
+    create_users_table(conn)
+
     if st.session_state["show_splash"]:
         splash_screen()
     else:
         if not st.session_state["login_status"]:
-            st.subheader("Login")
-            username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
-            if st.button("Login"):
-                if login(username, password):
-                    st.success(f"Logged in as {username}")
-                else:
-                    st.error("Invalid username or password")
+            if st.session_state["page"] == "login":
+                st.subheader("Login")
+                username = st.text_input("Username")
+                password = st.text_input("Password", type="password")
+                if st.button("Login"):
+                    if login_user(conn, username, password):
+                        st.session_state["login_status"] = True
+                        st.session_state["username"] = username
+                        st.success(f"Logged in as {username}")
+                        st.experimental_rerun()
+                    else:
+                        st.error("Invalid username or password")
+                if st.button("New user? Register here"):
+                    st.session_state["page"] = "register"
+                    st.experimental_rerun()
+            elif st.session_state["page"] == "register":
+                st.subheader("Register")
+                with st.form("registration_form"):
+                    reg_username = st.text_input("Register Username")
+                    reg_password = st.text_input("Register Password", type="password")
+                    submitted = st.form_submit_button("Register")
+                    if submitted:
+                        register_user(conn, reg_username, reg_password)
+                        st.success("User registered successfully!")
+                        st.experimental_rerun()
+                if st.button("Already have an account? Login here"):
+                    st.session_state["page"] = "login"
+                    st.experimental_rerun()
         else:
-            st.sidebar.title(f"Welcome, {st.session_state['username']}")
-            if st.sidebar.button("Logout"):
-                logout()
-                st.experimental_rerun()
+            st.sidebar.title(f"HI! Welcome, {st.session_state['username']}")
             st.title('TensorFlow Model Prediction from Random Image Sample')
-            uploadFile = st.file_uploader(label="Upload Image", type=['jpg', 'jpeg', 'png', 'webp'])
 
+            uploadFile = st.sidebar.file_uploader("Upload Image", type=['jpg', 'jpeg', 'png', 'webp'])
             if uploadFile is not None:
+                st.session_state["uploaded_file"] = uploadFile
+
+            if "uploaded_file" in st.session_state:
                 if st.button('Test Prediction'):
-                    image = load_image(uploadFile)
+                    image = load_image(st.session_state["uploaded_file"])
                     x = utils.load_img(image, target_size=(110, 110))
                     x = utils.img_to_array(x)
                     x = x.reshape(1, 110, 110, 3) / 255
@@ -137,7 +173,24 @@ def main():
                     else:
                         st.write("Nutrition facts not available for this predicted class.")
 
+            if st.sidebar.button("Log Out"):
+                conn.commit()
+                conn.close()
+                logout()
+
 if __name__ == '__main__':
+    if "login_status" not in st.session_state:
+        st.session_state["login_status"] = False
+
+    if "show_splash" not in st.session_state:
+        st.session_state["show_splash"] = True
+
+    if "page" not in st.session_state:
+        st.session_state["page"] = "login"
+
+    with open("fitter_logo.png", "rb") as image_file:
+        st.session_state["logo_base64"] = base64.b64encode(image_file.read()).decode("utf-8")
+
     model = tf.keras.models.load_model('exported_model')
     arrKey = ["ayam", "daging_rendang", "dendeng_batokok", "gulai_ikan", "gulai_tambusu", "telur_balado",
               "telur_dadar", "tahu", "daun_singkong", "perkedel", "nasi", "tempe", "telur_mata_sapi",
@@ -162,8 +215,5 @@ if __name__ == '__main__':
         "mie": {"Protein (g)": 5, "Fat (g)": 3, "Carbohydrate (g)": 20, "Calories": 200},
         "udang": {"Protein (g)": 20, "Fat (g)": 10, "Carbohydrate (g)": 3, "Calories": 220}
     }
-
-    with open("fitter_logo.png", "rb") as image_file:
-        st.session_state["logo_base64"] = base64.b64encode(image_file.read()).decode("utf-8")
 
     main()
