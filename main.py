@@ -9,6 +9,29 @@ import matplotlib.pyplot as plt
 import io
 import pandas as  pd
 
+USER_DATA = {
+    "tes": "tes",
+    "alin": "alin"
+}
+
+if "login_status" not in st.session_state:
+    st.session_state["login_status"] = False
+
+def login(username, password):
+    if USER_DATA.get(username) == password:
+        st.session_state["login_status"] = True
+        st.session_state["username"] = username
+        st.experimental_rerun()
+        return True
+    else:
+        st.session_state["login_status"] = False
+        st.experimental_rerun()
+        return False
+
+def logout():
+    st.session_state["login_status"] = False
+    st.session_state.pop("username", None)
+
 model = tf.keras.models.load_model('exported_model')
 
 arrKey = ["ayam", "daging_rendang", "dendeng_batokok", "gulai_ikan", "gulai_tambusu", "telur_balado",
@@ -44,32 +67,46 @@ def load_image(uploaded_file):
     return io.BytesIO(uploaded_file.read())
 
 def main():
-    st.title('TensorFlow Model Prediction from Random Image Sample')
-    uploadFile = st.file_uploader(label="Upload Image", type=['jpg', 'jpeg', 'png', 'webp'])
-
-    if uploadFile is not None:
-        if st.button('Test Prediction'):
-            image = load_image(uploadFile)
-            x = utils.load_img(image, target_size=(110, 110))
-            x = utils.img_to_array(x)
-            x = x.reshape(1, 110, 110, 3) / 255
-
-            prediction = make_prediction(x)
-            st.image(Image.open(image))
-            st.write(f"Prediction: {prediction}")
-
-            confidence_score = np.max(model.predict(x))
-            st.write(f"Confidence Score: {confidence_score:.2f}")
-
-            if confidence_score < 0.85:
-                st.warning("The model's prediction has a low confidence score (below 85%) and may not be reliable.")
-
-            if prediction in nutrition_facts:
-                st.subheader("Nutrition Facts per 100 gram:")
-                nutrition_df = pd.DataFrame(nutrition_facts[prediction], index=[prediction])
-                st.dataframe(nutrition_df)
+    if not st.session_state["login_status"]:
+        st.subheader("Login")
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        if st.button("Login"):
+            if login(username, password):
+                st.success(f"Logged in as {username}")
             else:
-                st.write("Nutrition facts not available for this predicted class.")
+                st.error("Invalid username or password")
+    else:
+        st.sidebar.title(f"Welcome, {st.session_state['username']}")
+        if st.sidebar.button("Logout"):
+            logout()
+            st.experimental_rerun()
+        st.title('TensorFlow Model Prediction from Random Image Sample')
+        uploadFile = st.file_uploader(label="Upload Image", type=['jpg', 'jpeg', 'png', 'webp'])
+
+        if uploadFile is not None:
+            if st.button('Test Prediction'):
+                image = load_image(uploadFile)
+                x = utils.load_img(image, target_size=(110, 110))
+                x = utils.img_to_array(x)
+                x = x.reshape(1, 110, 110, 3) / 255
+
+                prediction = make_prediction(x)
+                st.image(Image.open(image))
+                st.write(f"Prediction: {prediction}")
+
+                confidence_score = np.max(model.predict(x))
+                st.write(f"Confidence Score: {confidence_score:.2f}")
+
+                if confidence_score < 0.85:
+                    st.warning("The model's prediction has a low confidence score (below 85%) and may not be reliable.")
+
+                if prediction in nutrition_facts:
+                    st.subheader("Nutrition Facts per 100 gram:")
+                    nutrition_df = pd.DataFrame(nutrition_facts[prediction], index=[prediction])
+                    st.dataframe(nutrition_df)
+                else:
+                    st.write("Nutrition facts not available for this predicted class.")
 
 if __name__ == '__main__':
     main()
