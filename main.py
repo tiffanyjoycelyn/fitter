@@ -14,7 +14,6 @@ le2 = LabelEncoder()
 arrKey = le2.fit_transform(arrKey)
 
 def make_prediction(image_array):
-
     prediction = model.predict(image_array)
     prediction = le2.inverse_transform([np.argmax(prediction)])
     return prediction
@@ -22,19 +21,23 @@ def make_prediction(image_array):
 def load_image(uploaded_file):
     return io.BytesIO(uploaded_file.read())
 
-def main ():
+def main():
     st.title('TensorFlow Model Prediction from Random Image Sample')
-    uploadFile = st.file_uploader(label = "upload image", type = ['jpg', 'jpeg', 'png', 'webp'])
+    uploadFile = st.file_uploader(label="upload image", type=['jpg', 'jpeg', 'png', 'webp'])
 
     if st.button('test prediction'):
         if uploadFile is not None:
             image = load_image(uploadFile)
-            x = utils.load_img(image, target_size = (110, 110))
+            x = utils.load_img(image, target_size=(110, 110))
             x = utils.img_to_array(x)
-            x = x.reshape(1, 110, 110, 3)/255
+            x = x.reshape(1, 110, 110, 3) / 255
         prediction = make_prediction(x)
         st.image(Image.open(image))
         st.write(prediction)
-        
+        prediction_numeric = le2.transform(prediction)
+        confidence_score = np.max(model.predict(x))
+        st.write("Confidence Score:", confidence_score)
+
+
 if __name__ == '__main__':
     main()
