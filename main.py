@@ -37,6 +37,9 @@ def main():
         prediction_numeric = le2.transform(prediction)
         confidence_score = np.max(model.predict(x))
         st.write("Confidence Score:", confidence_score)
+        if confidence_score < 0.85:
+            st.warning("The model's prediction has a low confidence score (below 85%) and may not be reliable.")
+
 
 
 if __name__ == '__main__':
