@@ -14,6 +14,8 @@ model = tf.keras.models.load_model('exported_model')
 arrKey = ["ayam", "daging_rendang", "dendeng_batokok", "gulai_ikan", "gulai_tambusu", "telur_balado",
           "telur_dadar", "tahu", "daun_singkong", "perkedel", "nasi", "tempe", "telur_mata_sapi",
           "mie", "udang"]
+le2 = LabelEncoder()
+le2.fit(arrKey)
 
 nutrition_facts = {
     "ayam": {"Protein (g)": 20, "Fat (g)": 10, "Carbohydrate (g)": 5, "Calories": 250},
@@ -35,38 +37,39 @@ nutrition_facts = {
 
 def make_prediction(image_array):
     prediction = model.predict(image_array)
-    prediction = arrKey[np.argmax(prediction)]
-    return prediction
+    predicted_class = le2.inverse_transform([np.argmax(prediction)])[0]
+    return predicted_class
 
 def load_image(uploaded_file):
     return io.BytesIO(uploaded_file.read())
 
 def main():
     st.title('TensorFlow Model Prediction from Random Image Sample')
-    uploadFile = st.file_uploader(label="upload image", type=['jpg', 'jpeg', 'png', 'webp'])
+    uploadFile = st.file_uploader(label="Upload Image", type=['jpg', 'jpeg', 'png', 'webp'])
 
-    if st.button('test prediction'):
-        if uploadFile is not None:
+    if uploadFile is not None:
+        if st.button('Test Prediction'):
             image = load_image(uploadFile)
             x = utils.load_img(image, target_size=(110, 110))
             x = utils.img_to_array(x)
             x = x.reshape(1, 110, 110, 3) / 255
 
-        prediction = make_prediction(x)
-        st.image(Image.open(image))
-        st.write(prediction)
-        confidence_score = np.max(model.predict(x))
-        st.write("Confidence Score:", confidence_score)
+            prediction = make_prediction(x)
+            st.image(Image.open(image))
+            st.write(f"Prediction: {prediction}")
 
-        if confidence_score < 0.85:
-            st.warning("The model's prediction has a low confidence score (below 85%) and may not be reliable.")
+            confidence_score = np.max(model.predict(x))
+            st.write(f"Confidence Score: {confidence_score:.2f}")
 
-        if prediction in nutrition_facts:
-            st.subheader("Nutrition Facts:")
-            nutrition_df = pd.DataFrame(nutrition_facts[prediction], index=[prediction])
-            st.dataframe(nutrition_df)
-        else:
-            st.write("Nutrition facts not available for this predicted class.")
+            if confidence_score < 0.85:
+                st.warning("The model's prediction has a low confidence score (below 85%) and may not be reliable.")
+
+            if prediction in nutrition_facts:
+                st.subheader("Nutrition Facts per 100 gram:")
+                nutrition_df = pd.DataFrame(nutrition_facts[prediction], index=[prediction])
+                st.dataframe(nutrition_df)
+            else:
+                st.write("Nutrition facts not available for this predicted class.")
 
 if __name__ == '__main__':
     main()
