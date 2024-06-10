@@ -17,12 +17,26 @@ def connect_db():
     conn = sqlite3.connect('user_data.db', check_same_thread=False)
     return conn
 
-def create_users_table(conn):
+def create_tables(conn):
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
             username TEXT PRIMARY KEY,
             password TEXT
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS profiles (
+            username TEXT PRIMARY KEY,
+            weight REAL,
+            height REAL,
+            lifestyle TEXT,
+            bmi REAL,
+            calories_per_day REAL,
+            protein_per_day REAL,
+            carbs_per_day REAL,
+            fat_per_day REAL,
+            FOREIGN KEY(username) REFERENCES users(username)
         )
     ''')
     conn.commit()
@@ -36,7 +50,6 @@ def login_user(conn, username, password):
         if bcrypt.checkpw(password.encode('utf-8'), hashed_password.encode('utf-8')):
             return True
     return False
-
 def register_user(conn, username, password):
     cursor = conn.cursor()
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
@@ -45,6 +58,7 @@ def register_user(conn, username, password):
         conn.commit()
     except sqlite3.IntegrityError:
         st.error("Username already exists. Please choose a different username.")
+
 
 def logout():
     st.session_state["login_status"] = False
@@ -105,9 +119,88 @@ def make_prediction(image_array):
 def load_image(uploaded_file):
     return io.BytesIO(uploaded_file.read())
 
+def save_profile(conn, username, weight, height, lifestyle, bmi, calories, protein, carbs, fat):
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO profiles (username, weight, height, lifestyle, bmi, calories_per_day, protein_per_day, carbs_per_day, fat_per_day)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(username) DO UPDATE SET
+            weight=excluded.weight,
+            height=excluded.height,
+            lifestyle=excluded.lifestyle,
+            bmi=excluded.bmi,
+            calories_per_day=excluded.calories_per_day,
+            protein_per_day=excluded.protein_per_day,
+            carbs_per_day=excluded.carbs_per_day,
+            fat_per_day=excluded.fat_per_day
+    ''', (username, weight, height, lifestyle, bmi, calories, protein, carbs, fat))
+    conn.commit()
+
+
+def load_profile(conn, username):
+    cursor = conn.cursor()
+    cursor.execute('SELECT weight, height, lifestyle FROM profiles WHERE username = ?', (username,))
+    result = cursor.fetchone()
+    return result
+
+
+def calculate_bmi(weight, height):
+    return weight / (height / 100) ** 2
+
+def calculate_daily_needs(bmi, lifestyle):
+
+    lifestyle_factors = {
+        "Idle": 1.2,
+        "Light": 1.375,
+        "Moderate": 1.55,
+        "Active": 1.725,
+        "Athletic": 1.9
+    }
+    factor = lifestyle_factors[lifestyle]
+
+    base_calories = 2000
+    calories = base_calories * factor
+
+    protein = (calories * 0.15) / 4
+    carbs = (calories * 0.55) / 4
+    fat = (calories * 0.30) / 9
+
+    return calories, protein, carbs, fat
+
+def prediction_page():
+    st.title('TensorFlow Model Prediction from Random Image Sample')
+    uploadFile = st.file_uploader(label="Upload Image", type=['jpg', 'jpeg', 'png', 'webp'])
+
+    if uploadFile is not None:
+        if 'uploaded_file' not in st.session_state:
+            st.session_state['uploaded_file'] = uploadFile
+
+        if st.button('Test Prediction'):
+            image = load_image(st.session_state['uploaded_file'])
+            x = utils.load_img(image, target_size=(110, 110))
+            x = utils.img_to_array(x)
+            x = x.reshape(1, 110, 110, 3) / 255
+
+            prediction = make_prediction(x)
+            st.image(Image.open(image))
+            st.write(f"Prediction: {prediction}")
+
+            confidence_score = np.max(model.predict(x))
+            st.write(f"Confidence Score: {confidence_score:.2f}")
+
+            if confidence_score < 0.85:
+                st.warning("The model's prediction has a low confidence score (below 85%) and may not be reliable.")
+
+            if prediction in nutrition_facts:
+                st.subheader("Nutrition Facts per 100 gram:")
+                nutrition_df = pd.DataFrame(nutrition_facts[prediction], index=[prediction])
+                st.dataframe(nutrition_df)
+            else:
+                st.write("Nutrition facts not available for this predicted class.")
+
 def main():
     conn = connect_db()
-    create_users_table(conn)
+    create_tables(conn)
 
     if st.session_state["show_splash"]:
         splash_screen()
@@ -143,35 +236,48 @@ def main():
                     st.experimental_rerun()
         else:
             st.sidebar.title(f"HI! Welcome, {st.session_state['username']}")
-            st.title('TensorFlow Model Prediction from Random Image Sample')
+            if st.sidebar.button("Profile"):
+                st.session_state["page"] = "profile"
+                st.experimental_rerun()
+            
+            if st.sidebar.button('Predict - Upload Image'):
+                st.session_state["page"] = "predict"
+                st.experimental_rerun()
 
-            uploadFile = st.sidebar.file_uploader("Upload Image", type=['jpg', 'jpeg', 'png', 'webp'])
-            if uploadFile is not None:
-                st.session_state["uploaded_file"] = uploadFile
+            if st.session_state["page"] == "profile":
+                st.subheader("User Profile")
+                username = st.session_state["username"]
+                
+                profile_data = load_profile(conn, username)
+                if profile_data:
+                    weight, height, lifestyle = profile_data
+                else:
+                    weight, height, lifestyle = None, None, "Idle"
 
-            if "uploaded_file" in st.session_state:
-                if st.button('Test Prediction'):
-                    image = load_image(st.session_state["uploaded_file"])
-                    x = utils.load_img(image, target_size=(110, 110))
-                    x = utils.img_to_array(x)
-                    x = x.reshape(1, 110, 110, 3) / 255
+                weight = st.number_input("Weight (kg)", value=weight if weight else 0.0)
+                height = st.number_input("Height (cm)", value=height if height else 0.0)
+                lifestyle = st.radio("Lifestyle", ("Idle", "Light", "Moderate", "Active", "Athletic"), index=["Idle", "Light", "Moderate", "Active", "Athletic"].index(lifestyle))
 
-                    prediction = make_prediction(x)
-                    st.image(Image.open(image))
-                    st.write(f"Prediction: {prediction}")
+                if st.button("Save Profile"):
+                    bmi = calculate_bmi(weight, height)
+                    calories, protein, carbs, fat = calculate_daily_needs(bmi, lifestyle)
+                    save_profile(conn, username, weight, height, lifestyle, bmi, calories, protein, carbs, fat)
+                    st.success("Profile saved successfully!")
+                
+                st.subheader("Profile Summary")
+                if weight and height:
+                    bmi = calculate_bmi(weight, height)
+                    calories, protein, carbs, fat = calculate_daily_needs(bmi, lifestyle)
+                    st.write(f"BMI: {bmi:.2f}")
+                    st.write(f"Calories per day: {calories:.2f}")
+                    st.write(f"Protein per day: {protein:.2f} grams")
+                    st.write(f"Carbohydrates per day: {carbs:.2f} grams")
+                    st.write(f"Fat per day: {fat:.2f} grams")
+                else:
+                    st.write("Please complete your profile to see the summary.")
 
-                    confidence_score = np.max(model.predict(x))
-                    st.write(f"Confidence Score: {confidence_score:.2f}")
-
-                    if confidence_score < 0.85:
-                        st.warning("The model's prediction has a low confidence score (below 85%) and may not be reliable.")
-
-                    if prediction in nutrition_facts:
-                        st.subheader("Nutrition Facts per 100 gram:")
-                        nutrition_df = pd.DataFrame(nutrition_facts[prediction], index=[prediction])
-                        st.dataframe(nutrition_df)
-                    else:
-                        st.write("Nutrition facts not available for this predicted class.")
+            elif st.session_state["page"] == "predict":
+                prediction_page()
 
             if st.sidebar.button("Log Out"):
                 conn.commit()
