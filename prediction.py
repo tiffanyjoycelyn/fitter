@@ -3,36 +3,34 @@ import tensorflow as tf
 import os
 from PIL import Image
 import numpy as np
-import keras.utils as utils
 from sklearn.preprocessing import LabelEncoder
-import matplotlib.pyplot as plt
 import io
-import pandas as pd
-import time
 
 
 def load_image(uploaded_file):
     return io.BytesIO(uploaded_file.read())
 
+
 def prediction_page():
     st.subheader("Upload Image for Prediction")
     uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
     if uploaded_file is not None:
-        image = Image.open(uploaded_file)
+        image = Image.open(uploaded_file).convert("RGB")
         st.image(image, caption='Uploaded Image.', use_column_width=True)
 
         img_array = np.array(image.resize((110, 110))) / 255.0
         img_array = np.expand_dims(img_array, axis=0)
 
-        model = tf.keras.models.load_model('exported_model')
-        arrKey = ["ayam", "daging_rendang", "dendeng_batokok", "gulai_ikan", "gulai_tambusu", "telur_balado",
-                  "telur_dadar", "tahu", "daun_singkong", "perkedel", "nasi", "tempe", "telur_mata_sapi",
-                  "mie", "udang"]
-        le2 = LabelEncoder()
-        le2.fit(arrKey)
+        with st.spinner('Predicting...'):
+            model = tf.keras.models.load_model('exported_model')
+            arrKey = ["ayam", "daging_rendang", "dendeng_batokok", "gulai_ikan", "gulai_tambusu", "telur_balado",
+                      "telur_dadar", "tahu", "daun_singkong", "perkedel", "nasi", "tempe", "telur_mata_sapi",
+                      "mie", "udang"]
+            le2 = LabelEncoder()
+            le2.fit(arrKey)
 
-        predictions = model.predict(img_array)
-        predicted_class = le2.inverse_transform([np.argmax(predictions)])[0]
+            predictions = model.predict(img_array)
+            predicted_class = le2.inverse_transform([np.argmax(predictions)])[0]
 
         nutrition_facts = {
             "ayam": {"Protein (g)": 20, "Fat (g)": 10, "Carbohydrate (g)": 5, "Calories": 250},
