@@ -47,7 +47,7 @@ def main():
             if st.sidebar.button("Profile"):
                 st.session_state["page"] = "profile"
                 st.experimental_rerun()
-            
+
             if st.sidebar.button('Predict - Upload Image'):
                 st.session_state["page"] = "predict"
                 st.experimental_rerun()
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     if "page" not in st.session_state:
         st.session_state["page"] = "login"
 
-    with open("fitter_logo.png", "rb") as image_file:
+    with open("fitter_logo.webp", "rb") as image_file:
         st.session_state["logo_base64"] = base64.b64encode(image_file.read()).decode("utf-8")
 
     main()

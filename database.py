@@ -28,25 +28,26 @@ def create_tables(conn):
     ''')
     conn.commit()
 
-def save_profile(conn, username, weight, height, lifestyle, bmi, calories, protein, carbs, fat):
+def save_profile(conn, profile_data):
     cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO profiles (username, weight, height, lifestyle, bmi, calories_per_day, protein_per_day, carbs_per_day, fat_per_day)
+    cursor.execute("""
+        INSERT OR REPLACE INTO profiles (username, weight, height, lifestyle, bmi, calories_per_day, protein_per_day, carbs_per_day, fat_per_day)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(username) DO UPDATE SET
-            weight=excluded.weight,
-            height=excluded.height,
-            lifestyle=excluded.lifestyle,
-            bmi=excluded.bmi,
-            calories_per_day=excluded.calories_per_day,
-            protein_per_day=excluded.protein_per_day,
-            carbs_per_day=excluded.carbs_per_day,
-            fat_per_day=excluded.fat_per_day
-    ''', (username, weight, height, lifestyle, bmi, calories, protein, carbs, fat))
+    """, (
+        profile_data['name'], 
+        profile_data['weight'], 
+        profile_data['height'], 
+        profile_data['lifestyle'], 
+        profile_data['bmi'], 
+        profile_data['calories'], 
+        profile_data['protein'], 
+        profile_data['carbs'], 
+        profile_data['fat']
+    ))
     conn.commit()
 
 def load_profile(conn, username):
     cursor = conn.cursor()
-    cursor.execute('SELECT weight, height, lifestyle FROM profiles WHERE username = ?', (username,))
+    cursor.execute('SELECT weight, height, lifestyle,bmi, calories_per_day, protein_per_day, carbs_per_day, fat_per_day FROM profiles WHERE username = ?', (username,))
     result = cursor.fetchone()
     return result
