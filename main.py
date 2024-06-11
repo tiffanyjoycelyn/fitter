@@ -5,6 +5,7 @@ from auth import login_user, register_user, logout, splash_screen
 from database import connect_db, create_tables
 from profile import profile_page
 from prediction import prediction_page
+from prediction_cam import prediction_page_cam
 
 def main():
     conn = connect_db()
@@ -51,11 +52,17 @@ def main():
             if st.sidebar.button('Predict - Upload Image'):
                 st.session_state["page"] = "predict"
                 st.experimental_rerun()
+                
+            if st.sidebar.button('Predict - Take a picture'):
+                st.session_state["page"] = "predict_cam"
+                st.experimental_rerun()
 
             if st.session_state["page"] == "profile":
                 profile_page(conn)
             elif st.session_state["page"] == "predict":
                 prediction_page()
+            elif st.session_state["page"] == "predict_cam":
+                prediction_page_cam()
 
             if st.sidebar.button("Log Out"):
                 conn.commit()

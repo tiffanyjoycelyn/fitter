@@ -6,7 +6,6 @@ def connect_db():
 
 def create_tables(conn):
     cursor = conn.cursor()
-    # Drop existing profiles table if it exists
     cursor.execute('DROP TABLE IF EXISTS profiles')
 
     cursor.execute('''

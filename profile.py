@@ -46,7 +46,7 @@ def profile_page(conn):
                     "bmi_classification": bmi_classification,
                 }
                 save_profile(conn, st.session_state.profile_data)
-                time.sleep(2)  # Simulate a delay for loading
+                time.sleep(2)
             st.success("Profile saved successfully!")
             st.experimental_rerun()
     else:
@@ -112,7 +112,7 @@ def show_profile_info(profile_data):
     st.markdown(f"**Protein per day**: {profile_data['protein']:.2f} grams")
     st.markdown(f"**Carbohydrates per day**: {profile_data['carbs']:.2f} grams")
     st.markdown(f"**Fat per day**: {profile_data['fat']:.2f} grams")
-        
+
     st.subheader("Health Classification")
     if profile_data['bmi_classification'] == "Underweight":
         st.write("You are considered underweight. It is important to eat a balanced diet and maintain a healthy lifestyle.")
