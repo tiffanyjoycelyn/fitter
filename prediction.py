@@ -59,8 +59,11 @@ def prediction_page():
 
         servings = st.number_input("Enter the number of servings (1 serving = 100 grams):", min_value=1, step=1)
 
-        if st.button("Save Prediction to Log"):
-
+        if servings > 0:
             nutrition_facts_servings = {k: v * servings for k, v in nutrition_facts[predicted_class].items()}
-            save_prediction_log(predicted_class, nutrition_facts_servings, servings)
-            st.success("Prediction saved to log.")
+            st.write('Adjusted Nutrition facts:')
+            st.write(nutrition_facts_servings)
+
+            if st.button("Save Prediction to Log"):
+                save_prediction_log(predicted_class, nutrition_facts_servings, servings)
+                st.success("Prediction saved to log.")
