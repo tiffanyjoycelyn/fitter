@@ -17,7 +17,8 @@ def save_prediction_log(session_state, conn, predicted_class, nutrition_facts, s
         'calories': nutrition_facts['Calories'],
         'protein': nutrition_facts['Protein (g)'],
         'carbohydrates': nutrition_facts['Carbohydrate (g)'],
-        'fat': nutrition_facts['Fat (g)']
+        'fat': nutrition_facts['Fat (g)'],
+        'nutrition_facts': nutrition_facts  # Store the entire nutrition facts dictionary
     }
     st.session_state['prediction_log'].append(log_entry)
     save_prediction_log_db(conn, log_entry)  # Save to the database

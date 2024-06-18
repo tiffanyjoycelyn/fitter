@@ -6,15 +6,16 @@ from database import connect_db, create_tables
 from profile import profile_page
 from prediction import prediction_page
 from prediction_cam import prediction_page_cam
-from prediction_log import prediction_log_page
-from datetime import datetime
+from prediction_log import prediction_log_page  # Import the new page
 
 def initialize_session_state():
     if 'prediction_log' not in st.session_state:
         st.session_state['prediction_log'] = []
+    if 'username' not in st.session_state:
+        st.session_state['username'] = None
 
 def main():
-    initialize_session_state()
+    initialize_session_state()  # Initialize session state at the start
     conn = connect_db()
     create_tables(conn)
 
