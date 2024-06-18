@@ -55,4 +55,7 @@ def prediction_page():
         st.write(f'Prediction: {predicted_class}')
         st.write('Nutrition facts:')
         st.write(nutrition_facts[predicted_class])
-        save_prediction_log(predicted_class, nutrition_facts[predicted_class])
+
+        if st.button("Save Prediction to Log"):
+            save_prediction_log(predicted_class, nutrition_facts[predicted_class])
+            st.success("Prediction saved to log.")
