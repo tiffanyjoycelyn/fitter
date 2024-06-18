@@ -6,8 +6,15 @@ from database import connect_db, create_tables
 from profile import profile_page
 from prediction import prediction_page
 from prediction_cam import prediction_page_cam
+from prediction_log import prediction_log_page
+from datetime import datetime
+
+def initialize_session_state():
+    if 'prediction_log' not in st.session_state:
+        st.session_state['prediction_log'] = []
 
 def main():
+    initialize_session_state()
     conn = connect_db()
     create_tables(conn)
 
@@ -56,6 +63,10 @@ def main():
             if st.sidebar.button('Predict - Take a picture'):
                 st.session_state["page"] = "predict_cam"
                 st.experimental_rerun()
+            
+            if st.sidebar.button('Prediction Log'):
+                st.session_state["page"] = "prediction_log"
+                st.experimental_rerun()
 
             if st.session_state["page"] == "profile":
                 profile_page(conn)
@@ -63,6 +74,8 @@ def main():
                 prediction_page()
             elif st.session_state["page"] == "predict_cam":
                 prediction_page_cam()
+            elif st.session_state["page"] == "prediction_log":
+                prediction_log_page()
 
             if st.sidebar.button("Log Out"):
                 conn.commit()

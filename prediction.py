@@ -1,15 +1,17 @@
 import streamlit as st
 import tensorflow as tf
-import os
 from PIL import Image
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
-import io
+from datetime import datetime
 
-
-def load_image(uploaded_file):
-    return io.BytesIO(uploaded_file.read())
-
+def save_prediction_log(predicted_class, nutrition_facts):
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    st.session_state['prediction_log'].append({
+        'Timestamp': timestamp,
+        'Predicted Class': predicted_class,
+        'Nutrition Facts': nutrition_facts
+    })
 
 def prediction_page():
     st.subheader("Upload Image for Prediction")
@@ -53,3 +55,4 @@ def prediction_page():
         st.write(f'Prediction: {predicted_class}')
         st.write('Nutrition facts:')
         st.write(nutrition_facts[predicted_class])
+        save_prediction_log(predicted_class, nutrition_facts[predicted_class])
