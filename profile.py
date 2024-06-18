@@ -1,12 +1,17 @@
 import streamlit as st
 import time
-from database import load_profile, save_profile
+from database import load_profile, save_profile, connect_db, calculate_remaining_nutrition  # Import necessary functions
 
 def profile_page(conn):
     st.subheader("User Profile")
     
+    if 'username' not in st.session_state or st.session_state['username'] is None:
+        st.write("Please log in to view and edit your profile.")
+        return
+
     if 'profile_data' not in st.session_state:
-        st.session_state.profile_data = None
+        st.session_state.profile_data = load_profile(conn, st.session_state['username'])
+        st.write("Loaded profile data:", st.session_state.profile_data)  # Log loaded profile data
 
     if st.session_state.profile_data is None:
         st.write("Please fill out your profile information.")
@@ -34,6 +39,7 @@ def profile_page(conn):
         if st.button("Save Profile"):
             with st.spinner("Updating profile..."):
                 st.session_state.profile_data = {
+                    "username": st.session_state['username'],  # Ensure username is included
                     "name": name,
                     "weight": weight,
                     "height": height,
@@ -46,6 +52,7 @@ def profile_page(conn):
                     "bmi_classification": bmi_classification,
                 }
                 save_profile(conn, st.session_state.profile_data)
+                st.write("Saved profile data:", st.session_state.profile_data)  # Log saved profile data
                 time.sleep(2)
             st.success("Profile saved successfully!")
             st.experimental_rerun()
@@ -79,6 +86,7 @@ def profile_page(conn):
             if st.button("Save Profile"):
                 with st.spinner("Updating profile..."):
                     st.session_state.profile_data = {
+                        "username": st.session_state['username'],  # Ensure username is included
                         "name": name,
                         "weight": weight,
                         "height": height,
@@ -91,9 +99,19 @@ def profile_page(conn):
                         "bmi_classification": bmi_classification,
                     }
                     save_profile(conn, st.session_state.profile_data)
+                    st.write("Saved profile data:", st.session_state.profile_data)  # Log saved profile data
                     time.sleep(2)
                 st.success("Profile updated successfully!")
                 st.experimental_rerun()
+
+        # Calculate remaining nutritional intake
+        remaining_calories, remaining_protein, remaining_carbs, remaining_fat = calculate_remaining_nutrition(conn, st.session_state['username'], profile_data)
+
+        st.subheader("Remaining Nutritional Intake for Today")
+        st.write(f"**Remaining Calories:** {remaining_calories:.2f} kcal")
+        st.write(f"**Remaining Protein:** {remaining_protein:.2f} g")
+        st.write(f"**Remaining Carbohydrates:** {remaining_carbs:.2f} g")
+        st.write(f"**Remaining Fat:** {remaining_fat:.2f} g")
 
 def classify_bmi(bmi):
     if bmi < 18.5:
