@@ -5,12 +5,13 @@ import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from datetime import datetime
 
-def save_prediction_log(predicted_class, nutrition_facts):
+def save_prediction_log(predicted_class, nutrition_facts, servings):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     st.session_state['prediction_log'].append({
         'Timestamp': timestamp,
         'Predicted Class': predicted_class,
-        'Nutrition Facts': nutrition_facts
+        'Nutrition Facts': nutrition_facts,
+        'Servings': servings
     })
 
 def prediction_page():
@@ -53,9 +54,13 @@ def prediction_page():
         }
 
         st.write(f'Prediction: {predicted_class}')
-        st.write('Nutrition facts:')
+        st.write('Nutrition facts (per 100 grams):')
         st.write(nutrition_facts[predicted_class])
 
+        servings = st.number_input("Enter the number of servings (1 serving = 100 grams):", min_value=1, step=1)
+
         if st.button("Save Prediction to Log"):
-            save_prediction_log(predicted_class, nutrition_facts[predicted_class])
+
+            nutrition_facts_servings = {k: v * servings for k, v in nutrition_facts[predicted_class].items()}
+            save_prediction_log(predicted_class, nutrition_facts_servings, servings)
             st.success("Prediction saved to log.")
