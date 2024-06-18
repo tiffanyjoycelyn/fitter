@@ -4,19 +4,29 @@ from PIL import Image
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
 from datetime import datetime
+from database import connect_db, save_prediction_log_db  # Import the database functions
 
-def save_prediction_log(predicted_class, nutrition_facts, servings):
+def save_prediction_log(session_state, conn, predicted_class, nutrition_facts, servings):
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    st.session_state['prediction_log'].append({
-        'Timestamp': timestamp,
-        'Predicted Class': predicted_class,
-        'Nutrition Facts': nutrition_facts,
-        'Servings': servings
-    })
+    username = session_state['username']
+    log_entry = {
+        'username': username,
+        'timestamp': timestamp,
+        'predicted_class': predicted_class,
+        'servings': servings,
+        'calories': nutrition_facts['Calories'],
+        'protein': nutrition_facts['Protein (g)'],
+        'carbohydrates': nutrition_facts['Carbohydrate (g)'],
+        'fat': nutrition_facts['Fat (g)']
+    }
+    st.session_state['prediction_log'].append(log_entry)
+    save_prediction_log_db(conn, log_entry)  # Save to the database
 
 def prediction_page():
+    conn = connect_db()  # Connect to the database
     st.subheader("Upload Image for Prediction")
     uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
+
     if uploaded_file is not None:
         image = Image.open(uploaded_file).convert("RGB")
         st.image(image, caption='Uploaded Image.', use_column_width=True)
@@ -60,10 +70,11 @@ def prediction_page():
         servings = st.number_input("Enter the number of servings (1 serving = 100 grams):", min_value=1, step=1)
 
         if servings > 0:
+            # Adjust nutrition facts based on servings
             nutrition_facts_servings = {k: v * servings for k, v in nutrition_facts[predicted_class].items()}
             st.write('Adjusted Nutrition facts:')
             st.write(nutrition_facts_servings)
 
             if st.button("Save Prediction to Log"):
-                save_prediction_log(predicted_class, nutrition_facts_servings, servings)
+                save_prediction_log(st.session_state, conn, predicted_class, nutrition_facts_servings, servings)
                 st.success("Prediction saved to log.")

@@ -29,6 +29,20 @@ def create_tables(conn):
             FOREIGN KEY(username) REFERENCES users(username)
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS prediction_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            timestamp TEXT,
+            predicted_class TEXT,
+            servings INTEGER,
+            calories REAL,
+            protein REAL,
+            carbohydrates REAL,
+            fat REAL,
+            FOREIGN KEY(username) REFERENCES users(username)
+        )
+    ''')
     conn.commit()
 
 def save_profile(conn, profile_data):
@@ -56,6 +70,22 @@ def load_profile(conn, username):
     result = cursor.fetchone()
     return result
 
+def save_prediction_log_db(conn, log_entry):
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO prediction_logs (username, timestamp, predicted_class, servings, calories, protein, carbohydrates, fat)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        log_entry['username'],
+        log_entry['timestamp'],
+        log_entry['predicted_class'],
+        log_entry['servings'],
+        log_entry['calories'],
+        log_entry['protein'],
+        log_entry['carbohydrates'],
+        log_entry['fat']
+    ))
+    conn.commit()
 
 def recreate_profiles_table():
     conn = sqlite3.connect('user_data.db', check_same_thread=False)
