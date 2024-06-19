@@ -1,33 +1,18 @@
 import streamlit as st
 import tensorflow as tf
-from PIL import Image
 import numpy as np
+from PIL import Image
 from sklearn.preprocessing import LabelEncoder
+import io
 from datetime import datetime
-from database import connect_db, save_prediction_log_db  # Import the database functions
+from database import connect_db, save_prediction_log_db
 
-def save_prediction_log(session_state, conn, predicted_class, nutrition_facts, servings):
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    username = session_state['username']
-    log_entry = {
-        'username': username,
-        'timestamp': timestamp,
-        'predicted_class': predicted_class,
-        'servings': servings,
-        'calories': nutrition_facts['Calories'],
-        'protein': nutrition_facts['Protein (g)'],
-        'carbohydrates': nutrition_facts['Carbohydrate (g)'],
-        'fat': nutrition_facts['Fat (g)'],
-        'nutrition_facts': nutrition_facts  # Store the entire nutrition facts dictionary
-    }
-    st.session_state['prediction_log'].append(log_entry)
-    save_prediction_log_db(conn, log_entry)  # Save to the database
+def load_image(uploaded_file):
+    return io.BytesIO(uploaded_file.read())
 
 def prediction_page():
-    conn = connect_db()  # Connect to the database
     st.subheader("Upload Image for Prediction")
     uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
-
     if uploaded_file is not None:
         image = Image.open(uploaded_file).convert("RGB")
         st.image(image, caption='Uploaded Image.', use_column_width=True)
@@ -64,18 +49,37 @@ def prediction_page():
             "udang": {"Protein (g)": 20, "Fat (g)": 10, "Carbohydrate (g)": 3, "Calories": 220}
         }
 
-        st.write(f'Prediction: {predicted_class}')
-        st.write('Nutrition facts (per 100 grams):')
-        st.write(nutrition_facts[predicted_class])
+        servings = st.number_input("Number of servings (1 serving = 100 grams)", min_value=1, step=1)
+        save_to_log = st.button("Save Prediction to Log")
 
-        servings = st.number_input("Enter the number of servings (1 serving = 100 grams):", min_value=1, step=1)
+        if save_to_log:
+            log_entry = {
+                "Timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                "Predicted Class": predicted_class,
+                "Servings": servings,
+                "Nutrition Facts": {
+                    "Calories": nutrition_facts[predicted_class]["Calories"] * servings,
+                    "Carbohydrate (g)": nutrition_facts[predicted_class]["Carbohydrate (g)"] * servings,
+                    "Protein (g)": nutrition_facts[predicted_class]["Protein (g)"] * servings,
+                    "Fat (g)": nutrition_facts[predicted_class]["Fat (g)"] * servings
+                }
+            }
+            if 'prediction_log' not in st.session_state:
+                st.session_state.prediction_log = []
+            st.session_state.prediction_log.append(log_entry)
+            st.write("Prediction saved to log.")
 
-        if servings > 0:
-            # Adjust nutrition facts based on servings
-            nutrition_facts_servings = {k: v * servings for k, v in nutrition_facts[predicted_class].items()}
-            st.write('Adjusted Nutrition facts:')
-            st.write(nutrition_facts_servings)
-
-            if st.button("Save Prediction to Log"):
-                save_prediction_log(st.session_state, conn, predicted_class, nutrition_facts_servings, servings)
-                st.success("Prediction saved to log.")
+            # Save to database
+            log_entry_db = {
+                "username": st.session_state['username'],
+                "timestamp": log_entry['Timestamp'],
+                "predicted_class": log_entry['Predicted Class'],
+                "servings": log_entry['Servings'],
+                "calories": log_entry['Nutrition Facts']['Calories'],
+                "protein": log_entry['Nutrition Facts']['Protein (g)'],
+                "carbohydrates": log_entry['Nutrition Facts']['Carbohydrate (g)'],
+                "fat": log_entry['Nutrition Facts']['Fat (g)']
+            }
+            conn = connect_db()
+            save_prediction_log_db(conn, log_entry_db)
+            conn.close()

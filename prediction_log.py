@@ -27,11 +27,11 @@ def prediction_log_page():
 
     # Calculate totals
     for entry in st.session_state['prediction_log']:
-        nutrition = entry['Nutrition Facts']
-        total_calories += nutrition['Calories']
-        total_carbohydrates += nutrition['Carbohydrate (g)']
-        total_protein += nutrition['Protein (g)']
-        total_fat += nutrition['Fat (g)']
+        nutrition = entry.get('Nutrition Facts', {})  # Use .get to avoid KeyError
+        total_calories += nutrition.get('Calories', 0)
+        total_carbohydrates += nutrition.get('Carbohydrate (g)', 0)
+        total_protein += nutrition.get('Protein (g)', 0)
+        total_fat += nutrition.get('Fat (g)', 0)
 
     # Checkbox to toggle visibility of logs
     show_logs = st.checkbox("Show Prediction Logs")

@@ -86,23 +86,15 @@ def load_profile(conn, username):
     print(f"No profile found for {username}")
     return None
 
-def save_prediction_log_db(conn, log_entry):
+def save_prediction_log_db(conn, log_entry_db):
     cursor = conn.cursor()
-    cursor.execute("""
-        INSERT INTO prediction_logs (username, timestamp, predicted_class, servings, calories, protein, carbohydrates, fat)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        log_entry['username'],
-        log_entry['timestamp'],
-        log_entry['predicted_class'],
-        log_entry['servings'],
-        log_entry['calories'],
-        log_entry['protein'],
-        log_entry['carbohydrates'],
-        log_entry['fat']
-    ))
+    cursor.execute('''INSERT INTO prediction_logs (username, timestamp, predicted_class, servings, calories, protein, carbohydrates, fat)
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+                   (log_entry_db['username'], log_entry_db['timestamp'], log_entry_db['predicted_class'], 
+                    log_entry_db['servings'], log_entry_db['calories'], log_entry_db['protein'], 
+                    log_entry_db['carbohydrates'], log_entry_db['fat']))
     conn.commit()
-    print(f"Saved prediction log for {log_entry['username']} at {log_entry['timestamp']}")
+    print(f"Saved prediction log for {log_entry_db['username']} at {log_entry_db['timestamp']}")
 
 def calculate_remaining_nutrition(conn, username, profile_data):
     cursor = conn.cursor()
@@ -162,3 +154,7 @@ def recreate_profiles_table():
     conn.close()
 
 recreate_profiles_table()
+
+# Example usage:
+conn = connect_db()
+create_tables(conn)
