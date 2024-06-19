@@ -49,7 +49,23 @@ def prediction_page():
             "udang": {"Protein (g)": 20, "Fat (g)": 10, "Carbohydrate (g)": 3, "Calories": 220}
         }
 
+        st.write(f"**Predicted Class:** {predicted_class}")
+        st.write("**Nutritional Facts per 100 grams:**")
+        st.write(nutrition_facts[predicted_class])
+
         servings = st.number_input("Number of servings (1 serving = 100 grams)", min_value=1, step=1)
+        
+        nutrition_per_serving = nutrition_facts[predicted_class]
+        nutrition_total = {
+            "Calories": nutrition_per_serving["Calories"] * servings,
+            "Carbohydrate (g)": nutrition_per_serving["Carbohydrate (g)"] * servings,
+            "Protein (g)": nutrition_per_serving["Protein (g)"] * servings,
+            "Fat (g)": nutrition_per_serving["Fat (g)"] * servings
+        }
+
+        st.write(f"**Nutritional Facts for {servings} serving(s):**")
+        st.write(nutrition_total)
+
         save_to_log = st.button("Save Prediction to Log")
 
         if save_to_log:
@@ -57,12 +73,7 @@ def prediction_page():
                 "Timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
                 "Predicted Class": predicted_class,
                 "Servings": servings,
-                "Nutrition Facts": {
-                    "Calories": nutrition_facts[predicted_class]["Calories"] * servings,
-                    "Carbohydrate (g)": nutrition_facts[predicted_class]["Carbohydrate (g)"] * servings,
-                    "Protein (g)": nutrition_facts[predicted_class]["Protein (g)"] * servings,
-                    "Fat (g)": nutrition_facts[predicted_class]["Fat (g)"] * servings
-                }
+                "Nutrition Facts": nutrition_total
             }
             if 'prediction_log' not in st.session_state:
                 st.session_state.prediction_log = []
@@ -75,10 +86,10 @@ def prediction_page():
                 "timestamp": log_entry['Timestamp'],
                 "predicted_class": log_entry['Predicted Class'],
                 "servings": log_entry['Servings'],
-                "calories": log_entry['Nutrition Facts']['Calories'],
-                "protein": log_entry['Nutrition Facts']['Protein (g)'],
-                "carbohydrates": log_entry['Nutrition Facts']['Carbohydrate (g)'],
-                "fat": log_entry['Nutrition Facts']['Fat (g)']
+                "calories": nutrition_total['Calories'],
+                "protein": nutrition_total['Protein (g)'],
+                "carbohydrates": nutrition_total['Carbohydrate (g)'],
+                "fat": nutrition_total['Fat (g)']
             }
             conn = connect_db()
             save_prediction_log_db(conn, log_entry_db)
