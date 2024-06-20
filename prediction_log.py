@@ -60,7 +60,23 @@ def prediction_log_page():
     remaining_calories, remaining_protein, remaining_carbs, remaining_fat = calculate_remaining_nutrition(conn, st.session_state['username'], profile_data)
 
     st.subheader("Remaining Nutritional Intake for Today")
-    st.write(f"**Remaining Calories:** {remaining_calories:.2f} kcal")
-    st.write(f"**Remaining Protein:** {remaining_protein:.2f} g")
-    st.write(f"**Remaining Carbohydrates:** {remaining_carbs:.2f} g")
-    st.write(f"**Remaining Fat:** {remaining_fat:.2f} g")
+    st.write(f"**Remaining Calories:** {profile_data['calories'] - total_calories:.2f} kcal")
+    st.write(f"**Remaining Protein:** {profile_data['protein'] - total_protein:.2f} g")
+    st.write(f"**Remaining Carbohydrates:** {profile_data['carbs'] - total_carbohydrates:.2f} g")
+    st.write(f"**Remaining Fat:** {profile_data['fat'] - total_fat:.2f} g")
+
+
+    exceeded_nutrients = []
+    if total_calories > profile_data['calories']:
+        exceeded_nutrients.append(f"Calories by {total_calories - profile_data['calories']:.2f} kcal")
+    if total_carbohydrates > profile_data['carbs']:
+        exceeded_nutrients.append(f"Carbohydrates by {total_carbohydrates - profile_data['carbs']:.2f} g")
+    if total_protein > profile_data['protein']:
+        exceeded_nutrients.append(f"Protein by {total_protein - profile_data['protein']:.2f} g")
+    if total_fat > profile_data['fat']:
+        exceeded_nutrients.append(f"Fat by {total_fat - profile_data['fat']:.2f} g")
+
+    if exceeded_nutrients:
+        st.warning("You have exceeded your daily nutritional limits for the following:\n" + "\n".join(exceeded_nutrients))
+    else:
+        st.success("You are within your daily nutritional limits. Keep up the good work!")

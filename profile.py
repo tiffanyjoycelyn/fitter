@@ -58,11 +58,21 @@ def profile_page(conn):
             st.experimental_rerun()
     else:
         profile_data = st.session_state.profile_data
+        profile_data.setdefault("name", "")
+        profile_data.setdefault("weight", 0)
+        profile_data.setdefault("height", 0)
+        profile_data.setdefault("lifestyle", "Idle")
+        profile_data.setdefault("bmi", 0)
+        profile_data.setdefault("calories", 0)
+        profile_data.setdefault("protein", 0)
+        profile_data.setdefault("carbs", 0)
+        profile_data.setdefault("fat", 0)
+        profile_data.setdefault("bmi_classification", "Normal weight")
         if st.checkbox("Show profile information"):
             show_profile_info(profile_data)
 
         if st.checkbox("Edit profile information"):
-            name = st.text_input("Name", value=profile_data["name"])
+            name = st.text_input("Name", value=profile_data["username"])
             weight = st.number_input("Weight (kg)", min_value=1.0, value=profile_data["weight"], step=0.1)
             height = st.number_input("Height (cm)", min_value=1.0, value=profile_data["height"], step=0.1)
             lifestyle = st.radio("Lifestyle", ("Idle", "Light", "Moderate", "Active", "Athletic"), index=["Idle", "Light", "Moderate", "Active", "Athletic"].index(profile_data["lifestyle"]))
@@ -104,15 +114,6 @@ def profile_page(conn):
                 st.success("Profile updated successfully!")
                 st.experimental_rerun()
 
-        # Calculate remaining nutritional intake
-        remaining_calories, remaining_protein, remaining_carbs, remaining_fat = calculate_remaining_nutrition(conn, st.session_state['username'], profile_data)
-
-        st.subheader("Remaining Nutritional Intake for Today")
-        st.write(f"**Remaining Calories:** {remaining_calories:.2f} kcal")
-        st.write(f"**Remaining Protein:** {remaining_protein:.2f} g")
-        st.write(f"**Remaining Carbohydrates:** {remaining_carbs:.2f} g")
-        st.write(f"**Remaining Fat:** {remaining_fat:.2f} g")
-
 def classify_bmi(bmi):
     if bmi < 18.5:
         return "Underweight"
@@ -124,7 +125,7 @@ def classify_bmi(bmi):
         return "Obesity"
 
 def show_profile_info(profile_data):
-    st.subheader(f"Profile Summary for {profile_data['name']}")
+    st.subheader(f"Profile Summary for {profile_data['username']}")
     st.markdown(f"**BMI**: {profile_data['bmi']:.2f}")
     st.markdown(f"**Calories per day**: {profile_data['calories']:.2f}")
     st.markdown(f"**Protein per day**: {profile_data['protein']:.2f} grams")

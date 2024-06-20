@@ -80,7 +80,6 @@ def prediction_page():
             st.session_state.prediction_log.append(log_entry)
             st.write("Prediction saved to log.")
 
-            # Save to database
             log_entry_db = {
                 "username": st.session_state['username'],
                 "timestamp": log_entry['Timestamp'],
