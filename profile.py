@@ -1,6 +1,6 @@
 import streamlit as st
 import time
-from database import load_profile, save_profile, connect_db, calculate_remaining_nutrition  # Import necessary functions
+from database import load_profile, save_profile, connect_db, calculate_remaining_nutrition
 
 def profile_page(conn):
     st.subheader("User Profile")
@@ -11,7 +11,7 @@ def profile_page(conn):
 
     if 'profile_data' not in st.session_state:
         st.session_state.profile_data = load_profile(conn, st.session_state['username'])
-        st.write("Loaded profile data:", st.session_state.profile_data)  # Log loaded profile data
+        st.write("Loaded profile data:", st.session_state.profile_data)
 
     if st.session_state.profile_data is None:
         st.write("Please fill out your profile information.")
@@ -39,7 +39,7 @@ def profile_page(conn):
         if st.button("Save Profile"):
             with st.spinner("Updating profile..."):
                 st.session_state.profile_data = {
-                    "username": st.session_state['username'],  # Ensure username is included
+                    "username": st.session_state['username'],
                     "name": name,
                     "weight": weight,
                     "height": height,
@@ -52,7 +52,7 @@ def profile_page(conn):
                     "bmi_classification": bmi_classification,
                 }
                 save_profile(conn, st.session_state.profile_data)
-                st.write("Saved profile data:", st.session_state.profile_data)  # Log saved profile data
+                st.write("Saved profile data:", st.session_state.profile_data)
                 time.sleep(2)
             st.success("Profile saved successfully!")
             st.experimental_rerun()
@@ -87,7 +87,7 @@ def profile_page(conn):
                 "Athletic": 1.9
             }[lifestyle]
 
-            bmr = 10 * weight + 6.25 * height - 5 * 25 + 5 
+            bmr = 10 * weight + 6.25 * height - 5 * 25 + 5
             calories_per_day = bmr * lifestyle_factor
             protein_per_day = weight * 1.2
             carbs_per_day = calories_per_day * 0.55 / 4
@@ -96,7 +96,7 @@ def profile_page(conn):
             if st.button("Save Profile"):
                 with st.spinner("Updating profile..."):
                     st.session_state.profile_data = {
-                        "username": st.session_state['username'],  # Ensure username is included
+                        "username": st.session_state['username'],
                         "name": name,
                         "weight": weight,
                         "height": height,
@@ -109,7 +109,7 @@ def profile_page(conn):
                         "bmi_classification": bmi_classification,
                     }
                     save_profile(conn, st.session_state.profile_data)
-                    st.write("Saved profile data:", st.session_state.profile_data)  # Log saved profile data
+                    st.write("Saved profile data:", st.session_state.profile_data)
                     time.sleep(2)
                 st.success("Profile updated successfully!")
                 st.experimental_rerun()

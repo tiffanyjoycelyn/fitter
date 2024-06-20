@@ -19,12 +19,10 @@ def prediction_log_page():
 
     st.subheader("Prediction Log")
 
-    # Initialize totals
     total_calories = 0
     total_carbohydrates = 0
     total_protein = 0
     total_fat = 0
-
 
     for entry in st.session_state['prediction_log']:
         nutrition = entry.get('Nutrition Facts', {}) 
@@ -33,7 +31,6 @@ def prediction_log_page():
         total_protein += nutrition.get('Protein (g)', 0)
         total_fat += nutrition.get('Fat (g)', 0)
 
-    # Checkbox to toggle visibility of logs
     show_logs = st.checkbox("Show Prediction Logs")
 
     if show_logs:
@@ -41,7 +38,7 @@ def prediction_log_page():
             for entry in st.session_state['prediction_log']:
                 st.write(f"**Timestamp:** {entry['Timestamp']}")
                 st.write(f"**Predicted Class:** {entry['Predicted Class']}")
-                servings = entry.get('Servings', 'N/A')  # Handle missing 'Servings' key
+                servings = entry.get('Servings', 'N/A')
                 st.write(f"**Servings:** {servings}")
                 st.write(f"**Nutrition Facts:**")
                 st.write(entry['Nutrition Facts'])
@@ -49,14 +46,12 @@ def prediction_log_page():
         else:
             st.write("No predictions logged yet.")
 
-    # Display totals
     st.subheader("Total Nutritional Intake from Logs")
     st.write(f"**Total Calories:** {total_calories} kcal")
     st.write(f"**Total Carbohydrates:** {total_carbohydrates} g")
     st.write(f"**Total Protein:** {total_protein} g")
     st.write(f"**Total Fat:** {total_fat} g")
-
-    # Calculate remaining nutritional intake
+    
     remaining_calories, remaining_protein, remaining_carbs, remaining_fat = calculate_remaining_nutrition(conn, st.session_state['username'], profile_data)
 
     st.subheader("Remaining Nutritional Intake for Today")
@@ -65,7 +60,6 @@ def prediction_log_page():
     st.write(f"**Remaining Carbohydrates:** {profile_data['carbs'] - total_carbohydrates:.2f} g")
     st.write(f"**Remaining Fat:** {profile_data['fat'] - total_fat:.2f} g")
 
-    # Check for exceeded nutrients
     exceeded_nutrients = []
     additional_info = []
     if total_calories > profile_data['calories']:

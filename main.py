@@ -6,7 +6,7 @@ from database import connect_db, create_tables
 from profile import profile_page
 from prediction import prediction_page
 from prediction_cam import prediction_page_cam
-from prediction_log import prediction_log_page  # Import the new page
+from prediction_log import prediction_log_page
 
 def initialize_session_state():
     if 'prediction_log' not in st.session_state:
@@ -15,7 +15,7 @@ def initialize_session_state():
         st.session_state['username'] = None
 
 def main():
-    initialize_session_state()  # Initialize session state at the start
+    initialize_session_state()
     conn = connect_db()
     create_tables(conn)
 
@@ -60,11 +60,11 @@ def main():
             if st.sidebar.button('Predict - Upload Image'):
                 st.session_state["page"] = "predict"
                 st.experimental_rerun()
-                
+
             if st.sidebar.button('Predict - Take a picture'):
                 st.session_state["page"] = "predict_cam"
                 st.experimental_rerun()
-            
+
             if st.sidebar.button('Prediction Log'):
                 st.session_state["page"] = "prediction_log"
                 st.experimental_rerun()

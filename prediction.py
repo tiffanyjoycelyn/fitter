@@ -54,7 +54,7 @@ def prediction_page():
         st.write(nutrition_facts[predicted_class])
 
         servings = st.number_input("Number of servings (1 serving = 100 grams)", min_value=1, step=1)
-        
+
         nutrition_per_serving = nutrition_facts[predicted_class]
         nutrition_total = {
             "Calories": nutrition_per_serving["Calories"] * servings,

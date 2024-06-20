@@ -99,19 +99,18 @@ def save_prediction_log_db(conn, log_entry_db):
 def calculate_remaining_nutrition(conn, username, profile_data):
     cursor = conn.cursor()
     today = datetime.now().strftime('%Y-%m-%d')
-    
+
     cursor.execute("""
         SELECT SUM(calories), SUM(protein), SUM(carbohydrates), SUM(fat)
         FROM prediction_logs
         WHERE username = ? AND DATE(timestamp) = ?
     """, (username, today))
-    
+
     result = cursor.fetchone()
-    
+
     if result:
         consumed_calories, consumed_protein, consumed_carbs, consumed_fat = result
-        if consumed_calories is None:  # Handle case where there are no entries for today
-            consumed_calories = 0
+        if consumed_calories is None:
         if consumed_protein is None:
             consumed_protein = 0
         if consumed_carbs is None:
@@ -155,6 +154,5 @@ def recreate_profiles_table():
 
 recreate_profiles_table()
 
-# Example usage:
 conn = connect_db()
 create_tables(conn)
