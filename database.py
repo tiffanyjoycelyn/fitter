@@ -111,6 +111,7 @@ def calculate_remaining_nutrition(conn, username, profile_data):
     if result:
         consumed_calories, consumed_protein, consumed_carbs, consumed_fat = result
         if consumed_calories is None:
+            consumed_calories = 0
         if consumed_protein is None:
             consumed_protein = 0
         if consumed_carbs is None:
