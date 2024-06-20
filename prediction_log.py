@@ -1,5 +1,5 @@
 import streamlit as st
-from database import connect_db, calculate_remaining_nutrition, load_profile  # Import necessary functions
+from database import connect_db, calculate_remaining_nutrition, load_profile
 
 def prediction_log_page():
     if 'prediction_log' not in st.session_state:
@@ -11,7 +11,7 @@ def prediction_log_page():
 
     conn = connect_db()
     profile_data = load_profile(conn, st.session_state['username'])
-    st.write("Loaded profile data:", profile_data)  # Log loaded profile data
+    st.write("Loaded profile data:", profile_data)
 
     if profile_data is None:
         st.write("Please complete your profile information first.")
@@ -25,9 +25,9 @@ def prediction_log_page():
     total_protein = 0
     total_fat = 0
 
-    # Calculate totals
+
     for entry in st.session_state['prediction_log']:
-        nutrition = entry.get('Nutrition Facts', {})  # Use .get to avoid KeyError
+        nutrition = entry.get('Nutrition Facts', {}) 
         total_calories += nutrition.get('Calories', 0)
         total_carbohydrates += nutrition.get('Carbohydrate (g)', 0)
         total_protein += nutrition.get('Protein (g)', 0)
@@ -65,18 +65,26 @@ def prediction_log_page():
     st.write(f"**Remaining Carbohydrates:** {profile_data['carbs'] - total_carbohydrates:.2f} g")
     st.write(f"**Remaining Fat:** {profile_data['fat'] - total_fat:.2f} g")
 
-
+    # Check for exceeded nutrients
     exceeded_nutrients = []
+    additional_info = []
     if total_calories > profile_data['calories']:
         exceeded_nutrients.append(f"Calories by {total_calories - profile_data['calories']:.2f} kcal")
     if total_carbohydrates > profile_data['carbs']:
         exceeded_nutrients.append(f"Carbohydrates by {total_carbohydrates - profile_data['carbs']:.2f} g")
+        additional_info.append("Excessive carbohydrate intake can lead to weight gain, increased risk of diabetes, and heart disease.")
     if total_protein > profile_data['protein']:
         exceeded_nutrients.append(f"Protein by {total_protein - profile_data['protein']:.2f} g")
+        additional_info.append("Excessive protein intake can cause kidney strain and other health issues.")
     if total_fat > profile_data['fat']:
         exceeded_nutrients.append(f"Fat by {total_fat - profile_data['fat']:.2f} g")
+        additional_info.append("Too much fat can lead to weight gain and increase the risk of heart disease.")
 
     if exceeded_nutrients:
         st.warning("You have exceeded your daily nutritional limits for the following:\n" + "\n".join(exceeded_nutrients))
+        st.subheader("Health Implications of Exceeding Nutrient Limits")
+        for info in additional_info:
+            st.write(f"- {info}")
     else:
         st.success("You are within your daily nutritional limits. Keep up the good work!")
+
