@@ -9,7 +9,7 @@ Fitter is a Deep Learning created to recognize the type of food and its nutritio
 You can check the deployment in here:
 `<link>` : <https://fitterdemo.streamlit.app/>
 
-You can see the application details including requirement, user flows on this presentation
+You can see the application details including requirement, user flows on this presentation <br>
 `<link>` : [Links](https://www.canva.com/design/DAGHtH1JF3Q/SJk5CphxYdk0POC2M_uEPw/edit?utm_content=DAGHtH1JF3Q&utm_campaign=designshare&utm_medium=link2&utm_source=sharebutton)
 
 Made By 
