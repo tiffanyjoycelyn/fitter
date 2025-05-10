@@ -3,7 +3,7 @@
   <img src="fitter_logo.webp" alt="Logo" width="150" height="150">
 </div>
 
-####Hi, welcome to fitter <br>
+#### Hi, welcome to fitter <br>
 Fitter is a Deep Learning created to recognize the type of food and its nutritional value. This is a collaborative project developed for Machine Learning course's final project
 
 You can check the deployment in here:
